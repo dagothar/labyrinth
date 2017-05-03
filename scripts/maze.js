@@ -41,24 +41,31 @@ var Maze = (function() {
       if (neighbours.length > 0) {  // pick random neighbour
         var next = neighbours[Math.floor(neighbours.length * Math.random())];
         next.visited = true;
-        next.parent = current;
-        next.connections.push(current);
-        current.connections.push(next);
+        next.parent = current.position;
+        //next.connections.push(current.position);
+        current.connections.push(next.position);
         current = next;
         neighbours = this.findNeighbours(current.position.x, current.position.y);
       } else {                      // backtrack
-        current = current.parent;
-        if (current != null) neighbours = this.findNeighbours(current.position.x, current.position.y);
+        if (current.parent === null) break;
+        current = this.data[current.parent.x][current.parent.y];
+        neighbours = this.findNeighbours(current.position.x, current.position.y);
       }
     }
   };
   
 
-  Maze.prototype.render = function(ctx, passWidth, passColor, wallColor) {
+  Maze.prototype.render = function(ctx1, passWidth, passColor, wallColor) {
+    var tmp = document.createElement('canvas');
+    tmp.width = 2*(this.width+0.5)*passWidth;
+    tmp.height = 2*(this.height+0.5)*passWidth;
+    var ctx = tmp.getContext('2d');
+    
     var passWidth = passWidth  || 5;
     var passColor = passColor || 'white';
     var wallColor = wallColor || 'black';
     var off = 1.5*passWidth;
+    var lineOffset = 2*passWidth;
     
     ctx.save();
     ctx.fillStyle = wallColor;
@@ -66,17 +73,22 @@ var Maze = (function() {
     ctx.strokeStyle = passColor;
     ctx.lineWidth = passWidth;
     ctx.lineCap = 'square';
+    ctx.beginPath();
     for (var i = 0; i < this.width; ++i) {
       for (var j = 0; j < this.height; ++j) {
         var current = this.data[i][j];
         for (var k = 0; k < current.connections.length; ++k) {
-          ctx.moveTo(2*passWidth*current.position.x+off, 2*passWidth*current.position.y+off);
-          ctx.lineTo(2*passWidth*current.connections[k].position.x+off, 2*passWidth*current.connections[k].position.y+off);
-          ctx.stroke();
+          ctx.moveTo(lineOffset*current.position.x+off, lineOffset*current.position.y+off);
+          ctx.lineTo(lineOffset*current.connections[k].x+off, lineOffset*current.connections[k].y+off);
         }
       }
     }
+    ctx.stroke();
     ctx.restore();
+    
+    ctx1.save();
+    ctx1.drawImage(tmp, 0, 0);
+    ctx1.restore();
   };
   
   

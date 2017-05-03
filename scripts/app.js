@@ -20,7 +20,7 @@ var App = (function() {
   
   
   App.prototype.run = function() {
-    var maze = new Maze(35, 35);
+    var maze = new Maze(50, 50);
     console.log(maze.data);
     maze.make(0, 0, null);
     console.log(maze.data);
