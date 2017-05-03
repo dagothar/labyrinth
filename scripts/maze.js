@@ -34,6 +34,11 @@ var Maze = (function() {
   }
   
   
+  function randn() {
+    return Math.sqrt(-2*Math.log(Math.random()))*Math.cos(2*Math.PI*Math.random());
+  }
+  
+  
   Maze.prototype.make = function(x, y, cb) {
     var x = x || 0;
     var y = y || 0;
@@ -44,7 +49,29 @@ var Maze = (function() {
     current.visited = true;
     while (current != null || neighbours.length > 0) {
       if (neighbours.length > 0) {  // pick random neighbour
-        var next = neighbours[Math.floor(neighbours.length * Math.random())];
+      
+        //var next = neighbours[Math.floor(neighbours.length * Math.random())];
+        var next = null;
+        while (!next) {
+          var tx = randn();
+          var ty = randn();
+          
+          var fi = 0;Math.PI/5;
+          var sx = 5*Math.abs(25-current.position.y)+1, sy = 5*Math.abs(25-current.position.x)+1;
+          //var sx = 5*Math.abs(y/x)+1, sy = 5*Math.abs(y/x)+1;
+          var nx = sx*Math.cos(fi) * tx - sy*Math.sin(fi) * ty;
+          var ny = sx*Math.sin(fi) * tx + sy*Math.cos(fi) * ty;
+          
+          if (ny > Math.abs(nx) && current.position.y < this.height-1 && !this.data[current.position.x][current.position.y+1].visited)
+            next = this.data[current.position.x][current.position.y+1];
+          if (ny < -Math.abs(nx) && current.position.y > 0 && !this.data[current.position.x][current.position.y-1].visited)
+            next = this.data[current.position.x][current.position.y-1];
+          if (nx > Math.abs(ny) && current.position.x < this.width-1 && !this.data[current.position.x+1][current.position.y].visited)
+            next = this.data[current.position.x+1][current.position.y];
+          if (nx < -Math.abs(ny) && current.position.x > 0 && !this.data[current.position.x-1][current.position.y].visited)
+            next = this.data[current.position.x-1][current.position.y];
+        }
+        
         next.visited = true;
         next.parent = current.position;
         next.connections.push(current.position);
