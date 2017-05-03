@@ -6,11 +6,21 @@ var App = (function() {
    * @brief Constructor.
    */
   function App() {
+    this._initialize();
   };
   
   
   App.prototype._initialize = function() {
-    
+    // create view
+    this._viewContainer = $('#view').get(0);
+    this._view = new Concrete.Viewport({
+      container: this._viewContainer,
+      width: 800,
+      height: 600
+    });
+    this._backgroundLayer = new Concrete.Layer();   this._backgroundLayer.setSize(800, 600);
+    this._mazeLayer = new Concrete.Layer();
+    this._view.add(this._backgroundLayer).add(this._mazeLayer);
   };
   
   
@@ -20,14 +30,15 @@ var App = (function() {
   
   
   App.prototype.run = function() {
-    setInterval(function() {
-    var maze = new Maze(10, 10);
-    //console.log(maze.data);
-    maze.make(5, 5, null);
-    //console.log(maze.data);
-    var ctx = $('#tmp').get(0).getContext('2d');
-    maze.render(ctx, 10, 8);
-    }, 100);
+    var maze = new Maze(48, 64);
+    maze.make();
+    var img = new Image();
+    img.src = 'images/dagothar.jpg';
+    console.log(img);
+    var self = this;
+    img.onload = function() { self._backgroundLayer.scene.context.drawImage(img, 0, 0); };
+    self._backgroundLayer.scene.context.scale(0.5, 0.5);
+    maze.render(this._mazeLayer.scene.context, 5, 1, 'rgba(128, 128, 128, 1)', 'rgba(255, 255, 255, 1)');
   };
   
   

@@ -19,6 +19,9 @@ var Maze = (function() {
   
   
   function Maze(width, height) {
+    var width = width || 10;
+    var height = height || 10;
+    
     this.width = width;
     this.height = height;
     this.data = [];
@@ -32,6 +35,9 @@ var Maze = (function() {
   
   
   Maze.prototype.make = function(x, y, cb) {
+    var x = x || 0;
+    var y = y || 0;
+    
     var current = this.data[x][y];
     var neighbours = this.findNeighbours(current.position.x, current.position.y);
     
@@ -50,28 +56,32 @@ var Maze = (function() {
         current = this.data[current.parent.x][current.parent.y];
         neighbours = this.findNeighbours(current.position.x, current.position.y);
       }
+      
+      if (cb) cb(this, current);
     }
   };
   
 
-  Maze.prototype.render = function(ctx1, cellSize, passWidth, passColor, wallColor) {
-    var tmp = document.createElement('canvas');
-    tmp.width = 2*(this.width+0.5)*passWidth;
-    tmp.height = 2*(this.height+0.5)*passWidth;
-    var ctx = tmp.getContext('2d');
-    
+  Maze.prototype.render = function(ctx1, cellSize, passWidth, wallColor, passColor) {
     var passWidth = passWidth  || 5;
     var passColor = passColor || 'white';
     var wallColor = wallColor || 'black';
     var cellSize = cellSize || 10;
-    var wallWidth = (cellSize-passWidth)/2;
+    
+    var imgWidth = this.width*cellSize;
+    var imgHeight = this.height*cellSize;
+    var tmp = document.createElement('canvas');
+    tmp.width = imgWidth;
+    tmp.height = imgHeight;
+    var ctx = tmp.getContext('2d');
     
     ctx.save();
     ctx.fillStyle = wallColor;
-    ctx.fillRect(0, 0, (this.width)*cellSize, (this.height)*cellSize);
+    ctx.fillRect(0, 0, imgWidth, imgHeight);
     ctx.strokeStyle = passColor;
     ctx.lineWidth = passWidth;
     ctx.lineCap = 'square';
+    ctx.translate(0, 0);
     ctx.beginPath();
     for (var i = 0; i < this.width; ++i) {
       for (var j = 0; j < this.height; ++j) {
