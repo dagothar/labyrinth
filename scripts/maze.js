@@ -55,7 +55,7 @@ var Maze = (function() {
   
 
   Maze.prototype.render = function(ctx, passWidth, passColor, wallColor) {
-    var passWidth = passWidth || 5;
+    var passWidth = passWidth  || 5;
     var passColor = passColor || 'white';
     var wallColor = wallColor || 'black';
     var off = 1.5*passWidth;
@@ -70,8 +70,8 @@ var Maze = (function() {
       for (var j = 0; j < this.height; ++j) {
         var current = this.data[i][j];
         for (var k = 0; k < current.connections.length; ++k) {
-          ctx.moveTo(10*current.position.x+off, 10*current.position.y+off);
-          ctx.lineTo(10*current.connections[k].position.x+off, 10*current.connections[k].position.y+off);
+          ctx.moveTo(2*passWidth*current.position.x+off, 2*passWidth*current.position.y+off);
+          ctx.lineTo(2*passWidth*current.connections[k].position.x+off, 2*passWidth*current.connections[k].position.y+off);
           ctx.stroke();
         }
       }
