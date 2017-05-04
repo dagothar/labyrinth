@@ -5,7 +5,9 @@
   <title>Labyrinth</title>
   
   <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="vendor/spectrum/spectrum.css"/>
   <link rel="stylesheet" href="styles/main.css"/>
+  
 </head>
 
 <body>
@@ -31,9 +33,30 @@
       <!-- SIDE PANEL -->
       <div class="col-md-3">
         <div class="panel panel-default">
-          <div class="panel-heading">...</div>
+          <div class="panel-heading">Controls</div>
           <div class="panel-body">
-
+            <!-- new maze button -->
+            <button type="button" class="button-generate btn btn-default btn-block">Generate new maze <span class="glyphicon glyphicon-pencil"></span></button>
+            
+            <!-- maze parameters -->
+            <div class="form-group col-md-6">
+              <label>Maze width:<input type="number" id="maze-width" value="20"/></label>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Maze height:<input type="number" id="maze-height" value="20"/></label>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Cell size [px]:<input type="number" id="cell-size" value="10"/></label>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Path width [px]:<input type="number" id="path-width" value="8"/></label>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Wall color:<input type="color" id="wall-color" value="#000000" data-show-alpha="true"/></label>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Path color:<input type="color" id="path-color" value="#ffffff" data-show-alpha="true"/></label>
+            </div>
           </div>
         </div>        
       </div>
@@ -56,6 +79,7 @@
   <script src="vendor/underscore/underscore.min.js"></script>
   <script src="vendor/jquery/jquery-3.2.0.min.js"></script>
   <script src="vendor/concrete/concrete.min.js"></script>
+  <script src="vendor/spectrum/spectrum.js"></script>
   <script src="scripts/array2d.js"></script>
   <script src="scripts/maze.js"></script>
   <script src="scripts/app.js"></script>

@@ -56,11 +56,11 @@ var Maze = (function() {
           var tx = randn();
           var ty = randn();
           
-          var fi = 0;Math.PI/5;
-          var sx = 5*Math.abs(25-current.position.y)+1, sy = 5*Math.abs(25-current.position.x)+1;
+          var fi = 0;
+          var sx = 1, sy = 1; //5*Math.abs(25-current.position.y)+1, sy = 5*Math.abs(25-current.position.x)+1;
           //var sx = 5*Math.abs(y/x)+1, sy = 5*Math.abs(y/x)+1;
-          var nx = sx*Math.cos(fi) * tx - sy*Math.sin(fi) * ty;
-          var ny = sx*Math.sin(fi) * tx + sy*Math.cos(fi) * ty;
+      var nx = sx*Math.cos(fi) * tx - sy*Math.sin(fi) * ty - 1.9*(current.position.x-25)/Math.abs(current.position.x-25 || 1);
+          var ny = sx*Math.sin(fi) * tx + sy*Math.cos(fi) * ty - 1.9*(current.position.y-25)/Math.abs(current.position.y-25 || 1);
           
           if (ny > Math.abs(nx) && current.position.y < this.height-1 && !this.data[current.position.x][current.position.y+1].visited)
             next = this.data[current.position.x][current.position.y+1];
@@ -89,7 +89,7 @@ var Maze = (function() {
   };
   
 
-  Maze.prototype.render = function(ctx1, cellSize, passWidth, wallColor, passColor) {
+  Maze.prototype.render = function(ctx, cellSize, passWidth, wallColor, passColor) {
     var passWidth = passWidth  || 5;
     var passColor = passColor || 'white';
     var wallColor = wallColor || 'black';
@@ -100,31 +100,31 @@ var Maze = (function() {
     var tmp = document.createElement('canvas');
     tmp.width = imgWidth;
     tmp.height = imgHeight;
-    var ctx = tmp.getContext('2d');
+    var tctx = tmp.getContext('2d');
     
-    ctx.save();
-    ctx.fillStyle = wallColor;
-    ctx.fillRect(0, 0, imgWidth, imgHeight);
-    ctx.strokeStyle = passColor;
-    ctx.lineWidth = passWidth;
-    ctx.lineCap = 'square';
-    ctx.translate(0, 0);
-    ctx.beginPath();
+    tctx.save();
+    tctx.fillStyle = wallColor;
+    tctx.fillRect(0, 0, imgWidth, imgHeight);
+    tctx.strokeStyle = passColor;
+    tctx.lineWidth = passWidth;
+    tctx.lineCap = 'square';
+    tctx.translate(0, 0);
+    tctx.beginPath();
     for (var i = 0; i < this.width; ++i) {
       for (var j = 0; j < this.height; ++j) {
         var current = this.data[i][j];
         for (var k = 0; k < current.connections.length; ++k) {
-          ctx.moveTo(cellSize*(current.position.x+0.5), cellSize*(current.position.y+0.5));
-          ctx.lineTo(cellSize*(current.connections[k].x+0.5), cellSize*(current.connections[k].y+0.5));
+          tctx.moveTo(cellSize*(current.position.x+0.5), cellSize*(current.position.y+0.5));
+          tctx.lineTo(cellSize*(current.connections[k].x+0.5), cellSize*(current.connections[k].y+0.5));
         }
       }
     }
-    ctx.stroke();
-    ctx.restore();
+    tctx.stroke();
+    tctx.restore();
     
-    ctx1.save();
-    ctx1.drawImage(tmp, 0, 0);
-    ctx1.restore();
+    ctx.save();
+    ctx.drawImage(tmp, 0, 0);
+    ctx.restore();
   };
   
   
