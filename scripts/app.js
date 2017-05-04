@@ -71,17 +71,29 @@ var App = (function() {
   
   
   App.prototype._newMaze = function() {
+    this._mazeWidth = $(CONFIG.MAZE_WIDTH_ID).val();
+    this._mazeHeight = $(CONFIG.MAZE_HEIGHT_ID).val();
     this._maze = new Maze(this._mazeWidth, this._mazeHeight);
     this._maze.make();
     this._update();
   };
   
   
+  App.prototype._calculateMazeDimensions = function() {
+    return {
+      width: this._mazeWidth*this._cellSize,
+      height: this._mazeHeight*this._cellSize
+    };
+  };
+  
+  
   App.prototype._drawMaze = function() {
     var ctx = this._mazeLayer.scene.context;
+    var dim = this._calculateMazeDimensions();
     
     ctx.save();
     ctx.clearRect(0, 0, CONFIG.VIEW_WIDTH, CONFIG.VIEW_HEIGHT);
+    ctx.translate((CONFIG.VIEW_WIDTH-dim.width)/2, (CONFIG.VIEW_HEIGHT-dim.height)/2);
     this._maze.render(ctx, this._cellSize, this._pathWidth, this._wallColor, this._pathColor);
     ctx.restore();
   };

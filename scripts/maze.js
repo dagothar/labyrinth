@@ -59,8 +59,8 @@ var Maze = (function() {
           var fi = 0;
           var sx = 1, sy = 1; //5*Math.abs(25-current.position.y)+1, sy = 5*Math.abs(25-current.position.x)+1;
           //var sx = 5*Math.abs(y/x)+1, sy = 5*Math.abs(y/x)+1;
-      var nx = sx*Math.cos(fi) * tx - sy*Math.sin(fi) * ty - 1.9*(current.position.x-25)/Math.abs(current.position.x-25 || 1);
-          var ny = sx*Math.sin(fi) * tx + sy*Math.cos(fi) * ty - 1.9*(current.position.y-25)/Math.abs(current.position.y-25 || 1);
+      var nx = sx*Math.cos(fi) * tx - sy*Math.sin(fi) * ty ; //- 1.9*(current.position.x-25)/Math.abs(current.position.x-25 || 1);
+          var ny = sx*Math.sin(fi) * tx + sy*Math.cos(fi) * ty; // - 1.9*(current.position.y-25)/Math.abs(current.position.y-25 || 1);
           
           if (ny > Math.abs(nx) && current.position.y < this.height-1 && !this.data[current.position.x][current.position.y+1].visited)
             next = this.data[current.position.x][current.position.y+1];
@@ -103,12 +103,11 @@ var Maze = (function() {
     var tctx = tmp.getContext('2d');
     
     tctx.save();
-    tctx.fillStyle = wallColor;
-    tctx.fillRect(0, 0, imgWidth, imgHeight);
+    tctx.clearRect(0, 0, imgWidth, imgHeight);
     tctx.strokeStyle = passColor;
     tctx.lineWidth = passWidth;
     tctx.lineCap = 'square';
-    tctx.translate(0, 0);
+    
     tctx.beginPath();
     for (var i = 0; i < this.width; ++i) {
       for (var j = 0; j < this.height; ++j) {
@@ -120,6 +119,25 @@ var Maze = (function() {
       }
     }
     tctx.stroke();
+    
+    var imgData = tctx.getImageData(0, 0, imgWidth, imgHeight);
+    var pColor = tinycolor(passColor);
+    var wColor = tinycolor(wallColor).toRgb();
+    for (var i = 0, len = imgData.data.length; i < len; i += 4) {
+      var c = tinycolor({ r: imgData.data[i], g: imgData.data[i+1], b: imgData.data[i+2], a: imgData.data[i+3]/255.0});
+      if (!tinycolor.equals(pColor, c)) {
+        imgData.data[i] = wColor.r;
+        imgData.data[i+1] = wColor.g;
+        imgData.data[i+2] = wColor.b;
+        imgData.data[i+3] = 255;
+      }
+    }
+    tctx.putImageData(imgData, 0, 0);
+    
+    //tctx.fillStyle = wallColor;
+    //tctx.globalCompositeOperation = 'xor';
+    //tctx.fillRect(0, 0, imgWidth, imgHeight);
+    
     tctx.restore();
     
     ctx.save();
