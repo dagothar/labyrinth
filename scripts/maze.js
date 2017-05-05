@@ -2,11 +2,18 @@
 
 var Maze = (function() {
   
+  var WALL = {
+    N: 0x01,
+    S: 0x02,
+    W: 0x04,
+    E: 0x08
+  };
+  
   var NEIGHBOURHOOD = [
-    {x: -1, y: 0},
-    {x: 1, y: 0},
-    {x: 0, y: -1},
-    {x: 0, y: 1}
+    { x: -1, y: 0 },
+    { x: 1, y: 0 },
+    { x: 0, y: -1 },
+    { x: 0, y: 1 }
   ];
   
   
@@ -15,6 +22,7 @@ var Maze = (function() {
     this.visited = false;
     this.parent = null;
     this.connections = [];
+    this.walls = 0xff;
   }
   
   
@@ -52,6 +60,8 @@ var Maze = (function() {
       
         //var next = neighbours[Math.floor(neighbours.length * Math.random())];
         var next = null;
+        var cur_dir = null;
+        var next_dir = null;
         while (!next) {
           var tx = randn();
           var ty = randn();
@@ -59,23 +69,34 @@ var Maze = (function() {
           var fi = 0;
           var sx = 1, sy = 1; //5*Math.abs(25-current.position.y)+1, sy = 5*Math.abs(25-current.position.x)+1;
           //var sx = 5*Math.abs(y/x)+1, sy = 5*Math.abs(y/x)+1;
-      var nx = sx*Math.cos(fi) * tx - sy*Math.sin(fi) * ty ; //- 1.9*(current.position.x-25)/Math.abs(current.position.x-25 || 1);
+          var nx = sx*Math.cos(fi) * tx - sy*Math.sin(fi) * ty ; //- 1.9*(current.position.x-25)/Math.abs(current.position.x-25 || 1);
           var ny = sx*Math.sin(fi) * tx + sy*Math.cos(fi) * ty; // - 1.9*(current.position.y-25)/Math.abs(current.position.y-25 || 1);
           
-          if (ny > Math.abs(nx) && current.position.y < this.height-1 && !this.data[current.position.x][current.position.y+1].visited)
+          if (ny > Math.abs(nx) && current.position.y < this.height-1 && !this.data[current.position.x][current.position.y+1].visited) {
             next = this.data[current.position.x][current.position.y+1];
-          if (ny < -Math.abs(nx) && current.position.y > 0 && !this.data[current.position.x][current.position.y-1].visited)
+            cur_dir = WALL.S;
+            next_dir = WALL.N;
+          } else if (ny < -Math.abs(nx) && current.position.y > 0 && !this.data[current.position.x][current.position.y-1].visited) {
             next = this.data[current.position.x][current.position.y-1];
-          if (nx > Math.abs(ny) && current.position.x < this.width-1 && !this.data[current.position.x+1][current.position.y].visited)
+            cur_dir = WALL.N;
+            next_dir = WALL.S;
+          } else if (nx > Math.abs(ny) && current.position.x < this.width-1 && !this.data[current.position.x+1][current.position.y].visited) {
             next = this.data[current.position.x+1][current.position.y];
-          if (nx < -Math.abs(ny) && current.position.x > 0 && !this.data[current.position.x-1][current.position.y].visited)
+            cur_dir = WALL.E;
+            next_dir = WALL.W;
+          } else if (nx < -Math.abs(ny) && current.position.x > 0 && !this.data[current.position.x-1][current.position.y].visited) {
             next = this.data[current.position.x-1][current.position.y];
+            cur_dir = WALL.W;
+            next_dir = WALL.E;
+          }
         }
         
         next.visited = true;
         next.parent = current.position;
         next.connections.push(current.position);
         current.connections.push(next.position);
+        current.walls ^= cur_dir;
+        next.walls ^= next_dir;
         current = next;
         neighbours = this.findNeighbours(current.position.x, current.position.y);
       } else {                      // backtrack
@@ -101,13 +122,40 @@ var Maze = (function() {
     tmp.width = imgWidth;
     tmp.height = imgHeight;
     var tctx = tmp.getContext('2d');
+    var wallWidth = (cellSize - passWidth);
     
     tctx.save();
     tctx.clearRect(0, 0, imgWidth, imgHeight);
+    
+    // draw walls
+    tctx.lineCap = 'square';
+    tctx.strokeStyle = wallColor;
+    tctx.lineWidth = wallWidth;
+    tctx.beginPath();
+    tctx.moveTo(0, 0);
+    tctx.lineTo(0, cellSize*this.height);
+    tctx.moveTo(0, 0);
+    tctx.lineTo(cellSize*this.width, 0);
+    tctx.stroke();
+    tctx.beginPath();
+    for (var i = 0; i < this.width; ++i) {
+      for (var j = 0; j < this.height; ++j) {
+        var current = this.data[i][j];
+        if (current.walls & WALL.E) {
+          tctx.moveTo(cellSize*(current.position.x+1), cellSize*(current.position.y));
+          tctx.lineTo(cellSize*(current.position.x+1), cellSize*(current.position.y+1));
+        }
+        if (current.walls & WALL.S) {
+          tctx.moveTo(cellSize*(current.position.x), cellSize*(current.position.y+1));
+          tctx.lineTo(cellSize*(current.position.x+1), cellSize*(current.position.y+1));
+        }
+      }
+    }
+    tctx.stroke();
+
+    // draw passages
     tctx.strokeStyle = passColor;
     tctx.lineWidth = passWidth;
-    tctx.lineCap = 'square';
-    
     tctx.beginPath();
     for (var i = 0; i < this.width; ++i) {
       for (var j = 0; j < this.height; ++j) {
@@ -119,24 +167,6 @@ var Maze = (function() {
       }
     }
     tctx.stroke();
-    
-    var imgData = tctx.getImageData(0, 0, imgWidth, imgHeight);
-    var pColor = tinycolor(passColor);
-    var wColor = tinycolor(wallColor).toRgb();
-    for (var i = 0, len = imgData.data.length; i < len; i += 4) {
-      var c = tinycolor({ r: imgData.data[i], g: imgData.data[i+1], b: imgData.data[i+2], a: imgData.data[i+3]/255.0});
-      if (!tinycolor.equals(pColor, c)) {
-        imgData.data[i] = wColor.r;
-        imgData.data[i+1] = wColor.g;
-        imgData.data[i+2] = wColor.b;
-        imgData.data[i+3] = 255;
-      }
-    }
-    tctx.putImageData(imgData, 0, 0);
-    
-    //tctx.fillStyle = wallColor;
-    //tctx.globalCompositeOperation = 'xor';
-    //tctx.fillRect(0, 0, imgWidth, imgHeight);
     
     tctx.restore();
     
