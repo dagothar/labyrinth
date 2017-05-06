@@ -61,15 +61,42 @@ var App = (function() {
     
     // bind UI
     $(CONFIG.GENERATE_ID).click(function() { self._newMaze(); });
-    $(CONFIG.MAZE_WIDTH_ID).val(this._mazeWidth).change(function() { self._newMaze(); });
-    $(CONFIG.MAZE_HEIGHT_ID).val(this._mazeHeight).change(function() { self._newMaze(); });
+    
+    $(CONFIG.MAZE_WIDTH_ID).val(this._mazeWidth).on('input change', function() {
+      var newMazeWidth = $(this).val();
+      var mazeDim = self._calculateMazeDimensions(newMazeWidth, self._mazeHeight, self._cellSize);
+      if (newMazeWidth < 1
+        || mazeDim.width >= CONFIG.VIEW_WIDTH
+      ) {
+        $(this).val(self._mazeWidth);
+      } else {
+        self._mazeWidth = newMazeWidth;
+        self._newMaze();
+      }
+    });
+    
+    $(CONFIG.MAZE_HEIGHT_ID).val(this._mazeHeight).on('input change', function() {
+      var newMazeHeight = $(this).val();
+      var mazeDim = self._calculateMazeDimensions(self._mazeWidth, newMazeHeight, self._cellSize);
+      if (newMazeHeight < 1
+        || mazeDim.height >= CONFIG.VIEW_HEIGHT
+      ) {
+        $(this).val(self._mazeHeight);
+      } else {
+        self._mazeHeight = newMazeHeight;
+        self._newMaze();
+      }
+    });
     
     $(CONFIG.CELL_SIZE_ID).val(this._cellSize).on('input change', function() {
       var newCellSize = $(this).val();
       var newPathWidth = newCellSize - (self._cellSize-self._pathWidth);
-      console.log(newCellSize, newPathWidth);
+      var mazeDim = self._calculateMazeDimensions(self._mazeWidth, self._mazeHeight, newCellSize);
       if (newPathWidth < 1
-        || newCellSize < 1) {
+        || newCellSize < 1
+        || mazeDim.width >= CONFIG.VIEW_WIDTH
+        || mazeDim.height >= CONFIG.VIEW_HEIGHT
+      ) {
         $(this).val(self._cellSize);
       } else {
         self._cellSize = newCellSize;
@@ -82,7 +109,8 @@ var App = (function() {
     $(CONFIG.PATH_WIDTH_ID).val(this._pathWidth).on('input change', function() {
       var newPathWidth = $(this).val();
       if (newPathWidth < 1
-        || newPathWidth > self._cellSize-1) {
+        || newPathWidth > self._cellSize-1
+      ) {
         $(this).val(self._pathWidth);
       } else {
         self._pathWidth = newPathWidth;
@@ -104,17 +132,17 @@ var App = (function() {
   };
   
   
-  App.prototype._calculateMazeDimensions = function() {
+  App.prototype._calculateMazeDimensions = function(w, h, cs) {
     return {
-      width: this._mazeWidth*this._cellSize,
-      height: this._mazeHeight*this._cellSize
+      width: w*cs,
+      height: h*cs
     };
   };
   
   
   App.prototype._drawMaze = function() {
     var ctx = this._mazeLayer.scene.context;
-    var dim = this._calculateMazeDimensions();
+    var dim = this._calculateMazeDimensions(this._mazeWidth, this._mazeHeight, this._cellSize);
     
     ctx.save();
     ctx.clearRect(0, 0, CONFIG.VIEW_WIDTH, CONFIG.VIEW_HEIGHT);
