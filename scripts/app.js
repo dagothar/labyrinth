@@ -23,14 +23,16 @@ var App = (function() {
     BG_UPLOAD_ID:   '#bg-upload',
     BG_CLEAR_ID:    '.button-clear',
     MAZE_ANIMATE_ID:'.button-animate',
+    ANGLE_ID:       '#angle',
     X_SCALE_ID:     '#x-scale',
     Y_SCALE_ID:     '#y-scale',
     X_TRANS_ID:     '#x-translation',
     Y_TRANS_ID:     '#y-translation',
-    SPEED_ID:       '#slider-speed',
+    SPEED_ID:       '.speed',
+    SPEED_SLIDER_ID:'#slider-speed',
     DISTR_COLOR:    'rgba(0, 0, 255, 0.2)',
     DISTR_RADIUS:   10,
-    SPEED:          1
+    SPEED:          10
   };
   
  
@@ -215,11 +217,35 @@ var App = (function() {
       //clearInterval(self._mazeAnimateInt);
     });
     
-    $(CONFIG.SPEED_ID).on('input change', function() {
+    $(CONFIG.SPEED_ID).text(self._speed.toFixed(1) + ' [ms]');
+    
+    $(CONFIG.SPEED_SLIDER_ID).on('input change', function() {
       var val = parseInt($(this).val());
       self._speed = 1000 * Math.pow(1.047129, -val);
+      $(CONFIG.SPEED_ID).text(self._speed.toFixed(1) + ' [ms]');
       if (self._moveModeInt) self._playPath(self._path);
+      if (self._mazeAnimateInt) {
+        clearInterval(self._mazeAnimateInt);
+        self._mazeAnimateInt = setInterval(function() { self._newMazeStep(); }, self._speed);
+      }
     });
+  };
+  
+  
+  App.prototype._newMazeStep = function() {
+    var self = this;
+    var current = self._maze.make(self._theseus.x, self._theseus.y, self._makeSteps, function(x, y) { return self._randomOffset(self, x, y); });
+    if (current == null) {
+      clearInterval(self._mazeAnimateInt);
+      self._update();
+      return;
+    }
+    self._theseus.x = current.x;
+    self._theseus.y = current.y;
+    self._update();
+    
+    // draw distribution shade
+    self._drawDistribution(current.x, current.y);    
   };
   
   
@@ -235,21 +261,7 @@ var App = (function() {
     } else {
       
       clearInterval(this._mazeAnimateInt);
-      this._mazeAnimateInt = setInterval(function() {
-        var current = self._maze.make(self._theseus.x, self._theseus.y, self._makeSteps, function(x, y) { return self._randomOffset(self, x, y); });
-        if (current == null) {
-          clearInterval(self._mazeAnimateInt);
-          self._update();
-          return;
-        }
-        self._theseus.x = current.x;
-        self._theseus.y = current.y;
-        self._update();
-        
-        // draw distribution shade
-        self._drawDistribution(current.x, current.y);
-        
-      }, this._speed);
+      this._mazeAnimateInt = setInterval(function() { self._newMazeStep(); }, this._speed);
     }
   };
   
@@ -286,7 +298,8 @@ var App = (function() {
     var cy = Math.floor(self._mazeHeight/2);
     
     // calculate angle
-    var fi = 0;
+    var fi = eval($(CONFIG.ANGLE_ID).val());
+    if (isNaN(fi)) fi = 0;
     
     //calculate scale
     var sx = eval($(CONFIG.X_SCALE_ID).val());
@@ -367,8 +380,9 @@ var App = (function() {
     ctx.fillStyle = CONFIG.DISTR_COLOR;
     ctx.beginPath();
     ctx.translate((x+0.5)*this._cellSize+r*params.tx, (y+0.5)*this._cellSize+r*params.ty);
-    ctx.scale(params.sx, params.sy);
     ctx.rotate(params.fi);
+    ctx.scale(params.sx, params.sy);
+    
     ctx.arc(0, 0, CONFIG.DISTR_RADIUS, 0, 2*Math.PI);
     ctx.closePath();
     ctx.fill();
