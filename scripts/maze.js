@@ -193,6 +193,48 @@ var Maze = (function() {
   };
   
   
+  Maze.prototype.getPath = function(from, to) {
+    // construct path from 'from' to (0, 0)
+    var current = this.getCell(from.x, from.y);
+    var pathFrom = [];
+    do {
+      pathFrom.push(current.position);
+      var parent = current.parent;
+      if (parent) current = this.getCell(parent.x, parent.y);
+    } while (parent != null);
+    
+    // construct path from 'to' to (0, 0)
+    current = this.getCell(to.x, to.y);
+    var pathTo = [];
+    do {
+      pathTo.push(current.position);
+      var parent = current.parent;
+      if (parent) current = this.getCell(parent.x, parent.y);
+    } while (parent != null);
+    
+    // merge the two paths
+    var commonStep = undefined;
+    for (var i = 0, len = pathFrom.length < pathTo.length ? pathFrom.length : pathTo.length; i < len; ++i) {
+      var stepFrom = pathFrom.pop();
+      var stepTo = pathTo.pop();
+      if (stepFrom.x == stepTo.x && stepFrom.y == stepTo.y) {
+        commonStep = stepTo;
+        continue;
+      } else {
+        
+        pathFrom.push(stepFrom);
+        pathTo.push(stepTo);
+        break;
+      }
+    }
+    pathTo.push(commonStep);
+    
+    var path = pathFrom.concat(pathTo.reverse());
+    
+    return path;
+  };
+  
+  
   return Maze;
 } ());
 

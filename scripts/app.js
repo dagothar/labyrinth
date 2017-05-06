@@ -33,6 +33,7 @@ var App = (function() {
     this._view = undefined;
     this._backgroundLayer = undefined;
     this._mazeLayer = undefined;
+    this._theseusLayer = undefined;
     this._maze = undefined;
     this._mazeWidth = CONFIG.MAZE_WIDTH;
     this._mazeHeight = CONFIG.MAZE_HEIGHT;
@@ -44,6 +45,7 @@ var App = (function() {
       x: 0,
       y: 0
     };
+    this._moveModeInt = undefined; // path animation
   };
   
   
@@ -63,7 +65,8 @@ var App = (function() {
     });
     this._backgroundLayer = new Concrete.Layer();   this._backgroundLayer.setSize(CONFIG.VIEW_WIDTH, CONFIG.VIEW_HEIGHT);
     this._mazeLayer = new Concrete.Layer();
-    this._view.add(this._backgroundLayer).add(this._mazeLayer);
+    this._theseusLayer = new Concrete.Layer();
+    this._view.add(this._backgroundLayer).add(this._mazeLayer).add(this._theseusLayer);
     
     // bind UI
     $(CONFIG.GENERATE_ID).click(function() { self._newMaze(); });
@@ -77,6 +80,7 @@ var App = (function() {
         $(this).val(self._mazeWidth);
       } else {
         self._mazeWidth = newMazeWidth;
+        if (self._theseus.x >= newMazeWidth) self._theseus.x = newMazeWidth-1;
         self._newMaze();
       }
     });
@@ -90,6 +94,7 @@ var App = (function() {
         $(this).val(self._mazeHeight);
       } else {
         self._mazeHeight = newMazeHeight;
+        if (self._theseus.y >= newMazeHeight) self._theseus.y = newMazeHeight-1;
         self._newMaze();
       }
     });
@@ -169,7 +174,19 @@ var App = (function() {
         if (x < self._mazeWidth-1 && !(self._maze.getCell(x, y).walls & 0x08))
           ++self._theseus.x;
       }
-      self._update();
+      clearInterval(self._moveModeInt);
+      self._drawTheseus();
+    });
+    
+    $(CONFIG.VIEW_ID).mousemove(function(e) {
+      //console.log(self._getCellCoordinates({x: e.clientX, y: e.clientY}));
+    });
+    
+    $(CONFIG.VIEW_ID).click(function(e) {
+      var coord = self._getCellCoordinates({x: e.clientX, y: e.clientY});
+      if (coord.x < 0 || coord.x >= self._mazeWidth || coord.y < 0 || coord.y >= self._mazeHeight) return;
+      var path = self._maze.getPath(coord, {x: self._theseus.x, y: self._theseus.y});
+      self._playPath(path);
     });
   };
   
@@ -191,6 +208,19 @@ var App = (function() {
   };
   
   
+  App.prototype._getCellCoordinates = function(mousePos) {
+    var boundingRect = $(CONFIG.VIEW_ID).get(0).getBoundingClientRect();
+    var dim = this._calculateMazeDimensions(this._mazeWidth, this._mazeHeight, this._cellSize);
+    var mouseX = Math.floor(mousePos.x - boundingRect.left - (CONFIG.VIEW_WIDTH-dim.width)/2);
+    var mouseY = Math.floor(mousePos.y - boundingRect.top - (CONFIG.VIEW_HEIGHT-dim.height)/2);
+      
+    return {
+      x: Math.floor(mouseX / this._cellSize),
+      y: Math.floor(mouseY / this._cellSize)
+    };
+  };
+  
+  
   App.prototype._drawMaze = function() {
     var ctx = this._mazeLayer.scene.context;
     var dim = this._calculateMazeDimensions(this._mazeWidth, this._mazeHeight, this._cellSize);
@@ -204,10 +234,11 @@ var App = (function() {
   
   
   App.prototype._drawTheseus = function() {
-    var ctx = this._mazeLayer.scene.context;
+    var ctx = this._theseusLayer.scene.context;
     var dim = this._calculateMazeDimensions(this._mazeWidth, this._mazeHeight, this._cellSize);
     
     ctx.save();
+    ctx.clearRect(0, 0, CONFIG.VIEW_WIDTH, CONFIG.VIEW_HEIGHT);
     ctx.translate((CONFIG.VIEW_WIDTH-dim.width)/2, (CONFIG.VIEW_HEIGHT-dim.height)/2);
     ctx.fillStyle = 'red';
     ctx.beginPath();
@@ -215,6 +246,24 @@ var App = (function() {
     ctx.closePath();
     ctx.fill();
     ctx.restore();
+  };
+  
+  
+  App.prototype._playPath = function(path) {
+    var self = this;
+    path.pop();
+    
+    clearInterval(this._moveModeInt);
+    this._moveModeInt = setInterval(function() {
+      var step = path.pop();
+      if (!step) {
+        clearInterval(self._moveModeInt);
+        return;
+      }
+      self._theseus.x = step.x;
+      self._theseus.y = step.y;
+      self._drawTheseus();
+    }, 100);
   };
   
   
