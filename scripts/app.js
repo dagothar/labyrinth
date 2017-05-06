@@ -32,7 +32,8 @@ var App = (function() {
     SPEED_SLIDER_ID:'#slider-speed',
     DISTR_COLOR:    'rgba(0, 0, 255, 0.2)',
     DISTR_RADIUS:   10,
-    SPEED:          10
+    SPEED:          10,
+    DOWNLOAD_ID:    '.button-download'
   };
   
  
@@ -229,6 +230,8 @@ var App = (function() {
         self._mazeAnimateInt = setInterval(function() { self._newMazeStep(); }, self._speed);
       }
     });
+    
+    $(CONFIG.DOWNLOAD_ID).click(function() { self._download(); });
   };
   
   
@@ -405,6 +408,14 @@ var App = (function() {
       self._drawTheseus();
     }, this._speed);
   };
+  
+  
+  App.prototype._download = (function() {
+    var id = 0;
+    return function() {
+      this._view.toScene().download({ fileName: 'maze' + (id++).toFixed(0) + '.png' });
+    };
+  } ());
   
   
   App.prototype._update = function() {
