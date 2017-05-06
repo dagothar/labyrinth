@@ -20,6 +20,8 @@ var App = (function() {
     PATH_WIDTH_ID:  '#path-width',
     WALL_COLOR_ID:  '#wall-color',
     PATH_COLOR_ID:  '#path-color',
+    BG_UPLOAD_ID:   '#bg-upload',
+    BG_CLEAR_ID:    '.button-clear'
   };
   
  
@@ -120,6 +122,27 @@ var App = (function() {
     
     $(CONFIG.WALL_COLOR_ID).spectrum({ showAlpha: true }).val(this._wallColor).on('input change', function() { self._update(); });
     $(CONFIG.PATH_COLOR_ID).spectrum({ showAlpha: true }).val(this._pathColor).on('input change', function() { self._update(); });
+    
+    $(CONFIG.BG_UPLOAD_ID).change(function() {
+      if (this.files && this.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.src = e.target.result;
+          img.onload = function() {
+            var dx = (CONFIG.VIEW_WIDTH-img.width)/2;
+            var dy = (CONFIG.VIEW_HEIGHT-img.height)/2;
+            self._backgroundLayer.scene.context.clearRect(0, 0, CONFIG.VIEW_WIDTH, CONFIG.VIEW_HEIGHT);
+            self._backgroundLayer.scene.context.drawImage(img, dx, dy);
+          };
+        };
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+    
+    $(CONFIG.BG_CLEAR_ID).click(function() {
+      self._backgroundLayer.scene.context.clearRect(0, 0, CONFIG.VIEW_WIDTH, CONFIG.VIEW_HEIGHT);
+    });
   };
   
   
