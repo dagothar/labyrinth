@@ -40,6 +40,10 @@ var App = (function() {
     this._pathWidth = CONFIG.PATH_WIDTH;
     this._wallColor = CONFIG.WALL_COLOR;
     this._pathColor = CONFIG.PATH_COLOR;
+    this._theseus = {
+      x: 0,
+      y: 0
+    };
   };
   
   
@@ -143,6 +147,30 @@ var App = (function() {
     $(CONFIG.BG_CLEAR_ID).click(function() {
       self._backgroundLayer.scene.context.clearRect(0, 0, CONFIG.VIEW_WIDTH, CONFIG.VIEW_HEIGHT);
     });
+    
+    $(window).keypress(function(e) {
+      var x = self._theseus.x;
+      var y = self._theseus.y;
+      
+      var keycode = event.keyCode || event.which;
+      if (keycode == 119) { // W
+        if (y > 0 && !(self._maze.getCell(x, y).walls & 0x01))
+          --self._theseus.y;
+      }
+      if (keycode == 115) { // S
+        if (y < self._mazeHeight-1 && !(self._maze.getCell(x, y).walls & 0x02))
+          ++self._theseus.y;
+      }
+      if (keycode == 97) { // A
+        if (x > 0 && !(self._maze.getCell(x, y).walls & 0x04))
+          --self._theseus.x;
+      }
+      if (keycode == 100) { // D
+        if (x < self._mazeWidth-1 && !(self._maze.getCell(x, y).walls & 0x08))
+          ++self._theseus.x;
+      }
+      self._update();
+    });
   };
   
   
@@ -175,11 +203,27 @@ var App = (function() {
   };
   
   
+  App.prototype._drawTheseus = function() {
+    var ctx = this._mazeLayer.scene.context;
+    var dim = this._calculateMazeDimensions(this._mazeWidth, this._mazeHeight, this._cellSize);
+    
+    ctx.save();
+    ctx.translate((CONFIG.VIEW_WIDTH-dim.width)/2, (CONFIG.VIEW_HEIGHT-dim.height)/2);
+    ctx.fillStyle = 'red';
+    ctx.beginPath();
+    ctx.arc((this._theseus.x+0.5)*this._cellSize, (this._theseus.y+0.5)*this._cellSize, this._cellSize/2-1, 0, 2*Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  };
+  
+  
   App.prototype._update = function() {
     this._wallColor = $(CONFIG.WALL_COLOR_ID).spectrum('get').toRgbString();
     this._pathColor = $(CONFIG.PATH_COLOR_ID).spectrum('get').toRgbString();
     
     this._drawMaze();
+    this._drawTheseus();
   };
   
   

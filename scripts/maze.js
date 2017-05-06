@@ -17,6 +17,11 @@ var Maze = (function() {
   ];
   
   
+  function randn() {
+    return Math.sqrt(-2*Math.log(Math.random()))*Math.cos(2*Math.PI*Math.random());
+  }
+  
+  
   var Cell = function(x, y) {
     this.position = { x: x, y: y };
     this.visited = false;
@@ -42,9 +47,7 @@ var Maze = (function() {
   }
   
   
-  function randn() {
-    return Math.sqrt(-2*Math.log(Math.random()))*Math.cos(2*Math.PI*Math.random());
-  }
+  Maze.prototype.getCell = function(x, y) { return this.data[x][y]; };
   
   
   Maze.prototype.make = function(x, y, cb) {
