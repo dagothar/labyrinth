@@ -21,7 +21,8 @@ var App = (function() {
     WALL_COLOR_ID:  '#wall-color',
     PATH_COLOR_ID:  '#path-color',
     BG_UPLOAD_ID:   '#bg-upload',
-    BG_CLEAR_ID:    '.button-clear'
+    BG_CLEAR_ID:    '.button-clear',
+    MAZE_ANIMATE_ID:'.button-animate'
   };
   
  
@@ -46,6 +47,9 @@ var App = (function() {
       y: 0
     };
     this._moveModeInt = undefined; // path animation
+    this._mazeAnimate = false;
+    this._mazeAnimateInt = undefined;
+    this._makeSteps = 1;
   };
   
   
@@ -69,7 +73,10 @@ var App = (function() {
     this._view.add(this._backgroundLayer).add(this._mazeLayer).add(this._theseusLayer);
     
     // bind UI
-    $(CONFIG.GENERATE_ID).click(function() { self._newMaze(); });
+    $(CONFIG.GENERATE_ID).click(function() {
+      clearInterval(self._mazeAnimateInt);
+      self._newMaze();
+    });
     
     $(CONFIG.MAZE_WIDTH_ID).val(this._mazeWidth).on('input change', function() {
       var newMazeWidth = $(this).val();
@@ -178,25 +185,51 @@ var App = (function() {
       self._drawTheseus();
     });
     
-    $(CONFIG.VIEW_ID).mousemove(function(e) {
-      //console.log(self._getCellCoordinates({x: e.clientX, y: e.clientY}));
-    });
-    
     $(CONFIG.VIEW_ID).click(function(e) {
       var coord = self._getCellCoordinates({x: e.clientX, y: e.clientY});
       if (coord.x < 0 || coord.x >= self._mazeWidth || coord.y < 0 || coord.y >= self._mazeHeight) return;
       var path = self._maze.getPath(coord, {x: self._theseus.x, y: self._theseus.y});
+      clearInterval(self._mazeAnimateInt);
       self._playPath(path);
+    });
+    
+    $(CONFIG.MAZE_ANIMATE_ID).click(function() {
+      self._mazeAnimate ^= true;
+      if (self._mazeAnimate) {
+        self._makeSteps = 1;
+      } else {
+        self._makeSteps = 9999999;
+      }
+      $(this).text('Animate: ' + (self._mazeAnimate ? 'ON' : 'OFF'));
+      //clearInterval(self._mazeAnimateInt);
     });
   };
   
   
   App.prototype._newMaze = function() {
-    this._mazeWidth = $(CONFIG.MAZE_WIDTH_ID).val();
-    this._mazeHeight = $(CONFIG.MAZE_HEIGHT_ID).val();
+    var self = this;
+    clearInterval(this._moveModeInt);
+    
     this._maze = new Maze(this._mazeWidth, this._mazeHeight);
-    this._maze.make();
-    this._update();
+    
+    if (!this._mazeAnimate) {
+      this._maze.make(this._theseus.x, this._theseus.y);
+      this._update();
+    } else {
+      
+      clearInterval(this._mazeAnimateInt);
+      this._mazeAnimateInt = setInterval(function() {
+        var current = self._maze.make(self._theseus.x, self._theseus.y, self._makeSteps);
+        if (current == null) {
+          clearInterval(self._mazeAnimateInt);
+          self._update();
+          return;
+        }
+        self._theseus.x = current.x;
+        self._theseus.y = current.y;
+        self._update();
+      }, 10);
+    }
   };
   
   

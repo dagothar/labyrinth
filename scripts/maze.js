@@ -50,15 +50,16 @@ var Maze = (function() {
   Maze.prototype.getCell = function(x, y) { return this.data[x][y]; };
   
   
-  Maze.prototype.make = function(x, y, cb) {
+  Maze.prototype.make = function(x, y, steps, cb) {
     var x = x || 0;
     var y = y || 0;
+    var steps = steps || 9999999;
     
     var current = this.data[x][y];
     var neighbours = this.findNeighbours(current.position.x, current.position.y);
     
     current.visited = true;
-    while (current != null || neighbours.length > 0) {
+    while (steps > 0 && (current != null || neighbours.length > 0)) {
       if (neighbours.length > 0) {  // pick random neighbour
       
         //var next = neighbours[Math.floor(neighbours.length * Math.random())];
@@ -109,7 +110,10 @@ var Maze = (function() {
       }
       
       if (cb) cb(this, current);
+      --steps;
     }
+    
+    return current.parent == null ? null : current.position;
   };
   
 
