@@ -63,8 +63,33 @@ var App = (function() {
     $(CONFIG.GENERATE_ID).click(function() { self._newMaze(); });
     $(CONFIG.MAZE_WIDTH_ID).val(this._mazeWidth).change(function() { self._newMaze(); });
     $(CONFIG.MAZE_HEIGHT_ID).val(this._mazeHeight).change(function() { self._newMaze(); });
-    $(CONFIG.CELL_SIZE_ID).val(this._cellSize).on('input change', function() { self._update(); });
-    $(CONFIG.PATH_WIDTH_ID).val(this._pathWidth).on('input change', function() { self._update(); });
+    
+    $(CONFIG.CELL_SIZE_ID).val(this._cellSize).on('input change', function() {
+      var newCellSize = $(this).val();
+      var newPathWidth = newCellSize - (self._cellSize-self._pathWidth);
+      console.log(newCellSize, newPathWidth);
+      if (newPathWidth < 1
+        || newCellSize < 1) {
+        $(this).val(self._cellSize);
+      } else {
+        self._cellSize = newCellSize;
+        self._pathWidth = newPathWidth;
+        $(CONFIG.PATH_WIDTH_ID).val(newPathWidth);
+        self._update();
+      }
+    });
+    
+    $(CONFIG.PATH_WIDTH_ID).val(this._pathWidth).on('input change', function() {
+      var newPathWidth = $(this).val();
+      if (newPathWidth < 1
+        || newPathWidth > self._cellSize-1) {
+        $(this).val(self._pathWidth);
+      } else {
+        self._pathWidth = newPathWidth;
+        self._update();
+      }
+    });
+    
     $(CONFIG.WALL_COLOR_ID).spectrum({ showAlpha: true }).val(this._wallColor).on('input change', function() { self._update(); });
     $(CONFIG.PATH_COLOR_ID).spectrum({ showAlpha: true }).val(this._pathColor).on('input change', function() { self._update(); });
   };
@@ -100,8 +125,6 @@ var App = (function() {
   
   
   App.prototype._update = function() {
-    this._cellSize = $(CONFIG.CELL_SIZE_ID).val();
-    this._pathWidth = $(CONFIG.PATH_WIDTH_ID).val();
     this._wallColor = $(CONFIG.WALL_COLOR_ID).spectrum('get').toRgbString();
     this._pathColor = $(CONFIG.PATH_COLOR_ID).spectrum('get').toRgbString();
     
