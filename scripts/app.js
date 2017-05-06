@@ -6,8 +6,8 @@ var App = (function() {
   var CONFIG = {
     VIEW_WIDTH:     800,
     VIEW_HEIGHT:    600,
-    MAZE_WIDTH:     10,
-    MAZE_HEIGHT:    10,
+    MAZE_WIDTH:     25,
+    MAZE_HEIGHT:    25,
     CELL_SIZE:      10,
     PATH_WIDTH:     8,
     WALL_COLOR:     '#000000', //'rgba(0, 0, 0, 1)',
@@ -22,7 +22,15 @@ var App = (function() {
     PATH_COLOR_ID:  '#path-color',
     BG_UPLOAD_ID:   '#bg-upload',
     BG_CLEAR_ID:    '.button-clear',
-    MAZE_ANIMATE_ID:'.button-animate'
+    MAZE_ANIMATE_ID:'.button-animate',
+    X_SCALE_ID:     '#x-scale',
+    Y_SCALE_ID:     '#y-scale',
+    X_TRANS_ID:     '#x-translation',
+    Y_TRANS_ID:     '#y-translation',
+    SPEED_ID:       '#slider-speed',
+    DISTR_COLOR:    'rgba(0, 0, 255, 0.2)',
+    DISTR_RADIUS:   10,
+    SPEED:          1
   };
   
  
@@ -50,7 +58,8 @@ var App = (function() {
     this._mazeAnimate = false;
     this._mazeAnimateInt = undefined;
     this._makeSteps = 1;
-    this._speed = 1;
+    this._speed = CONFIG.SPEED;
+    this._path = [];
   };
   
   
@@ -58,7 +67,7 @@ var App = (function() {
     var self = this;
   
     // create maze
-    this._maze = new Maze(this._mazeWidth, this._mazeHeight);
+    this._maze = new Maze(this._mazeWidth, this._mazeHeight, 9999999, function(x, y) { return self._randomOffset(self, x, y); });
     this._maze.make();
     
     // create view
@@ -79,7 +88,7 @@ var App = (function() {
       self._newMaze();
     });
     
-    $(CONFIG.MAZE_WIDTH_ID).val(this._mazeWidth).on('input change', function() {
+    $(CONFIG.MAZE_WIDTH_ID).val(this._mazeWidth).on('change', function() {
       var newMazeWidth = $(this).val();
       var mazeDim = self._calculateMazeDimensions(newMazeWidth, self._mazeHeight, self._cellSize);
       if (newMazeWidth < 1
@@ -93,7 +102,7 @@ var App = (function() {
       }
     });
     
-    $(CONFIG.MAZE_HEIGHT_ID).val(this._mazeHeight).on('input change', function() {
+    $(CONFIG.MAZE_HEIGHT_ID).val(this._mazeHeight).on('change', function() {
       var newMazeHeight = $(this).val();
       var mazeDim = self._calculateMazeDimensions(self._mazeWidth, newMazeHeight, self._cellSize);
       if (newMazeHeight < 1
@@ -189,9 +198,10 @@ var App = (function() {
     $(CONFIG.VIEW_ID).click(function(e) {
       var coord = self._getCellCoordinates({x: e.clientX, y: e.clientY});
       if (coord.x < 0 || coord.x >= self._mazeWidth || coord.y < 0 || coord.y >= self._mazeHeight) return;
-      var path = self._maze.getPath(coord, {x: self._theseus.x, y: self._theseus.y});
+      self._path = self._maze.getPath(coord, {x: self._theseus.x, y: self._theseus.y});
+      self._path.pop();
       clearInterval(self._mazeAnimateInt);
-      self._playPath(path);
+      self._playPath(self._path);
     });
     
     $(CONFIG.MAZE_ANIMATE_ID).click(function() {
@@ -204,6 +214,12 @@ var App = (function() {
       $(this).text('Animate: ' + (self._mazeAnimate ? 'ON' : 'OFF'));
       //clearInterval(self._mazeAnimateInt);
     });
+    
+    $(CONFIG.SPEED_ID).on('input change', function() {
+      var val = parseInt($(this).val());
+      self._speed = 1000 * Math.pow(1.047129, -val);
+      if (self._moveModeInt) self._playPath(self._path);
+    });
   };
   
   
@@ -214,13 +230,13 @@ var App = (function() {
     this._maze = new Maze(this._mazeWidth, this._mazeHeight);
     
     if (!this._mazeAnimate) {
-      this._maze.make(this._theseus.x, this._theseus.y);
+      this._maze.make(this._theseus.x, this._theseus.y, 9999999, function(x, y) { return self._randomOffset(self, x, y); });
       this._update();
     } else {
       
       clearInterval(this._mazeAnimateInt);
       this._mazeAnimateInt = setInterval(function() {
-        var current = self._maze.make(self._theseus.x, self._theseus.y, self._makeSteps);
+        var current = self._maze.make(self._theseus.x, self._theseus.y, self._makeSteps, function(x, y) { return self._randomOffset(self, x, y); });
         if (current == null) {
           clearInterval(self._mazeAnimateInt);
           self._update();
@@ -229,6 +245,10 @@ var App = (function() {
         self._theseus.x = current.x;
         self._theseus.y = current.y;
         self._update();
+        
+        // draw distribution shade
+        self._drawDistribution(current.x, current.y);
+        
       }, this._speed);
     }
   };
@@ -251,6 +271,59 @@ var App = (function() {
     return {
       x: Math.floor(mouseX / this._cellSize),
       y: Math.floor(mouseY / this._cellSize)
+    };
+  };
+  
+  
+  function randn() {
+    return Math.sqrt(-2*Math.log(Math.random()))*Math.cos(2*Math.PI*Math.random());
+  }
+  
+  
+  App.prototype._getDistributionParameters = function(self, x, y) {
+    // initialize useful variables
+    var cx = Math.floor(self._mazeWidth/2);
+    var cy = Math.floor(self._mazeHeight/2);
+    
+    // calculate angle
+    var fi = 0;
+    
+    //calculate scale
+    var sx = eval($(CONFIG.X_SCALE_ID).val());
+    if (isNaN(sx) || sx == 0) sx = 1;
+    var sy = eval($(CONFIG.Y_SCALE_ID).val());
+    if (isNaN(sy) || sy == 0) sy = 1;
+    
+    // calculate translation
+    var tx = eval($(CONFIG.X_TRANS_ID).val());
+    if (isNaN(tx)) tx = 0;
+    var ty = eval($(CONFIG.Y_TRANS_ID).val());
+    if (isNaN(ty)) ty = 0;
+
+    return {
+      fi: fi,
+      sx: sx,
+      sy: sy,
+      tx: tx,
+      ty: ty
+    };
+  };
+  
+  
+  App.prototype._randomOffset = function(self, x, y) {
+    // initial random offset
+    var _x = randn();
+    var _y = randn();
+    
+    var params = self._getDistributionParameters(self, x, y);
+    
+    // calculate offset
+    var nx = params.sx*Math.cos(params.fi) * _x - params.sy*Math.sin(params.fi) * _y + params.tx;
+    var ny = params.sx*Math.sin(params.fi) * _x + params.sy*Math.cos(params.fi) * _y + params.ty;
+
+    return {
+      x: nx,
+      y: ny
     };
   };
   
@@ -283,9 +356,28 @@ var App = (function() {
   };
   
   
+  App.prototype._drawDistribution = function(x, y) {
+    var ctx = this._theseusLayer.scene.context;
+    var dim = this._calculateMazeDimensions(this._mazeWidth, this._mazeHeight, this._cellSize);
+    var params = this._getDistributionParameters(this, x, y);
+    var r = CONFIG.DISTR_RADIUS;
+    
+    ctx.save();
+    ctx.translate((CONFIG.VIEW_WIDTH-dim.width)/2, (CONFIG.VIEW_HEIGHT-dim.height)/2);
+    ctx.fillStyle = CONFIG.DISTR_COLOR;
+    ctx.beginPath();
+    ctx.translate((x+0.5)*this._cellSize+r*params.tx, (y+0.5)*this._cellSize+r*params.ty);
+    ctx.scale(params.sx, params.sy);
+    ctx.rotate(params.fi);
+    ctx.arc(0, 0, CONFIG.DISTR_RADIUS, 0, 2*Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  };
+  
+  
   App.prototype._playPath = function(path) {
     var self = this;
-    path.pop();
     
     clearInterval(this._moveModeInt);
     this._moveModeInt = setInterval(function() {
