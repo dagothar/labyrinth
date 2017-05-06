@@ -50,6 +50,7 @@ var App = (function() {
     this._mazeAnimate = false;
     this._mazeAnimateInt = undefined;
     this._makeSteps = 1;
+    this._speed = 1;
   };
   
   
@@ -228,7 +229,7 @@ var App = (function() {
         self._theseus.x = current.x;
         self._theseus.y = current.y;
         self._update();
-      }, 10);
+      }, this._speed);
     }
   };
   
@@ -296,7 +297,7 @@ var App = (function() {
       self._theseus.x = step.x;
       self._theseus.y = step.y;
       self._drawTheseus();
-    }, 100);
+    }, this._speed);
   };
   
   
